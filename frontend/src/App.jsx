@@ -95,7 +95,7 @@ function App() {
 
   const deleteChat = async (id, e) => {
     e.stopPropagation()
-    if (!confirm("Are you sure you want to delete this chat?")) return
+    if (!confirm("Ви впевнені, що хочете видалити цей чат?")) return
 
     try {
       const res = await fetch(`/api/chats/${id}`, { method: 'DELETE' })
@@ -188,8 +188,8 @@ function App() {
       fetchChats() // Update titles
     } catch (e) {
       console.error("Failed to send message", e)
-      setError("Failed to send message. Check your connection.")
-      setMessages(prev => [...prev, { role: 'assistant', content: "Error: Could not connect to server. Please try again." }])
+      setError("Не вдалося надіслати повідомлення. Перевірте з'єднання.")
+      setMessages(prev => [...prev, { role: 'assistant', content: "Помилка: Не вдалося підключитися до сервера. Спробуйте ще раз." }])
     } finally {
       setIsLoading(false)
     }
@@ -244,7 +244,7 @@ function App() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search"
+              placeholder="Пошук"
               className="w-full bg-black/5 dark:bg-slate-900/50 border-none dark:border dark:border-slate-700/50 rounded-lg py-2 pl-9 pr-4 text-[13px] text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/50 transition-all placeholder:text-gray-500 dark:placeholder:text-slate-500"
             />
           </div>
@@ -255,12 +255,12 @@ function App() {
             onClick={createNewChat}
             className="w-full py-2 px-4 bg-teal-500 hover:bg-teal-600 text-white rounded-lg font-medium shadow-sm transition-all flex items-center justify-center gap-2 active:scale-[0.98] duration-200 text-sm"
           >
-            <span className="text-xl leading-none font-light">+</span> New Consultation
+            <span className="text-xl leading-none font-light">+</span> Нова консультація
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-3 space-y-1 scrollbar-hide">
-          <div className="px-3 text-[10px] font-bold text-gray-700 dark:text-slate-500 uppercase tracking-widest mb-2 mt-4">Recent Cases</div>
+          <div className="px-3 text-[10px] font-bold text-gray-700 dark:text-slate-500 uppercase tracking-widest mb-2 mt-4">Останні випадки</div>
 
           {chats.filter(chat => chat.title.toLowerCase().includes(searchQuery.toLowerCase())).map(chat => (
             <div
@@ -303,14 +303,14 @@ function App() {
                 <button
                   onClick={(e) => startEditing(chat, e)}
                   className="p-1.5 hover:bg-teal-100 dark:hover:bg-teal-500/20 hover:text-teal-700 dark:hover:text-teal-400 rounded-lg transition-all mr-1"
-                  title="Rename Chat"
+                  title="Перейменувати чат"
                 >
                   <Edit2 size={14} />
                 </button>
                 <button
                   onClick={(e) => deleteChat(chat.id, e)}
                   className="p-1.5 hover:bg-rose-100 dark:hover:bg-rose-500/20 hover:text-rose-700 dark:hover:text-rose-400 rounded-lg transition-all"
-                  title="Delete Chat"
+                  title="Видалити чат"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -321,9 +321,9 @@ function App() {
 
         <div className="p-4 border-t border-black/10 dark:border-slate-800/50 text-xs text-gray-600 dark:text-slate-400 flex justify-between items-center bg-transparent">
           <button onClick={toggleTheme} className="flex items-center gap-2 hover:text-teal-700 dark:hover:text-teal-400 transition-colors font-semibold">
-            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />} {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />} {theme === 'dark' ? 'Світла тема' : 'Темна тема'}
           </button>
-          <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div> System Online</span>
+          <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div> Система онлайн</span>
         </div>
       </div>
 
@@ -339,12 +339,12 @@ function App() {
               <div className="flex items-center gap-4 animate-fade-in">
                 <div className="flex items-center gap-2 bg-black/5 dark:bg-teal-900/20 py-1 px-3 rounded-md dark:border dark:border-teal-500/20">
                   <div className="w-1.5 h-1.5 rounded-full bg-teal-500 dark:bg-teal-400"></div>
-                  <span className="text-xs font-medium text-gray-900 dark:text-teal-200">Patient</span>
+                  <span className="text-xs font-medium text-gray-900 dark:text-teal-200">Пацієнт</span>
                   <span className="font-mono text-xs text-gray-500 dark:text-teal-100">{sessionId.slice(0, 8)}</span>
                 </div>
               </div>
             ) : (
-              <div className="text-gray-800 dark:text-slate-400 text-sm font-medium">No Active Session</div>
+              <div className="text-gray-800 dark:text-slate-400 text-sm font-medium">Немає активної сесії</div>
             )}
           </div>
 
@@ -357,7 +357,7 @@ function App() {
                   responseFormat === 'text' ? "bg-white dark:bg-teal-600 text-black dark:text-white shadow-sm" : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-300"
                 )}
               >
-                <FileText size={12} /> Text
+                <FileText size={12} /> Текст
               </button>
               <button
                 onClick={() => setResponseFormat('table')}
@@ -366,7 +366,7 @@ function App() {
                   responseFormat === 'table' ? "bg-white dark:bg-teal-600 text-black dark:text-white shadow-sm" : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-300"
                 )}
               >
-                <LayoutGrid size={12} /> Table
+                <LayoutGrid size={12} /> Таблиця
               </button>
             </div>
           </div>
@@ -381,7 +381,7 @@ function App() {
               </div>
               <h2 className="text-4xl font-semibold text-slate-900 dark:text-white mb-4 tracking-tight">MedCouncil AI</h2>
               <p className="text-slate-700 dark:text-slate-400 max-w-md text-lg leading-relaxed font-light">
-                Advanced clinical decision support system. <br />Select a patient case or start a new consultation.
+                Передова система підтримки клінічних рішень. <br />Виберіть випадок пацієнта або почніть нову консультацію.
               </p>
             </div>
           ) : (
@@ -398,7 +398,7 @@ function App() {
                     {msg.logs && msg.logs.length > 0 && (
                       <div className="bg-white/50 dark:bg-[#1e293b]/50 backdrop-blur-md border border-black/5 dark:border-slate-700/50 rounded-xl p-4 text-xs space-y-2 mb-2">
                         <div className="font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2 text-[10px]">
-                          <Activity size={12} className="text-teal-600 dark:text-teal-400" /> Clinical Reasoning
+                          <Activity size={12} className="text-teal-600 dark:text-teal-400" /> Клінічне обґрунтування
                         </div>
                         {msg.logs.map((log, i) => (
                           <div key={i} className="text-gray-900 dark:text-slate-400 pl-3 border-l-2 border-teal-500/30 leading-relaxed font-mono text-[11px]">
@@ -429,7 +429,7 @@ function App() {
                                     copyToClipboard(tableText, `table-${idx}`)
                                   }}
                                   className="absolute top-3 right-3 p-2 bg-slate-700/50 hover:bg-slate-600 text-white rounded-lg opacity-0 group-hover/table:opacity-100 transition-all backdrop-blur-md"
-                                  title="Copy Table"
+                                  title="Копіювати таблицю"
                                 >
                                   {copiedId === `table-${idx}` ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
                                 </button>
@@ -459,7 +459,7 @@ function App() {
                           "absolute top-2 right-2 p-1.5 rounded-lg opacity-0 group-hover/msg:opacity-100 transition-all backdrop-blur-md",
                           msg.role === 'user' ? "bg-teal-500 hover:bg-teal-600 text-white" : "bg-black/5 dark:bg-slate-700/50 hover:bg-black/10 dark:hover:bg-slate-600/50 text-gray-700 dark:text-slate-200"
                         )}
-                        title="Copy Message"
+                        title="Копіювати повідомлення"
                       >
                         {copiedId === idx ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
                       </button>
@@ -499,7 +499,7 @@ function App() {
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Enter clinical data..."
+                  placeholder="Введіть клінічні дані..."
                   className="w-full bg-transparent text-gray-900 dark:text-slate-200 py-3 pl-6 pr-14 focus:outline-none placeholder:text-gray-500 dark:placeholder:text-slate-400 text-[15px]"
                   disabled={isLoading}
                 />
@@ -512,7 +512,7 @@ function App() {
                 </button>
               </div>
               <div className="text-center mt-3 text-[10px] text-gray-500 dark:text-slate-400 font-medium">
-                AI-generated medical advice. Always verify with clinical protocols.
+                Медичні поради згенеровані штучним інтелектом. Завжди звіряйтеся з клінічними протоколами.
               </div>
             </form>
           </div>

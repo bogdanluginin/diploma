@@ -88,15 +88,15 @@ class AgentSystem:
     def generate_title(self, user_message):
         """Generates a short, concise title for the chat based on the first message."""
         prompt = f"""
-        Analyze the following patient data/symptoms and generate a VERY SHORT title (max 4-5 words).
-        If a patient name is present, use it. Format: "Name - Condition" or just "Condition" if no name.
+        Analyze the following patient data/symptoms and generate a VERY SHORT title (max 4-5 words) in Ukrainian.
+        If a patient name is present, use it. Format: "Ім'я - Стан" or just "Стан" if no name.
         Do not use markdown or special characters. Keep it clinical and concise.
         
         Input: {user_message}
-        Title:
+        Title (in Ukrainian):
         """
         try:
             response = self.model.generate_content(prompt)
             return response.text.strip()
         except:
-            return "Clinical Case"
+            return "Клінічний випадок"
