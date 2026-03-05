@@ -30,5 +30,6 @@ COPY --chown=user --from=build /app/frontend/dist ./frontend/dist
 # Expose Hugging Face Space default port
 EXPOSE 7860
 
-# Command to run the application
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Command to run the application (run from within the backend directory)
+WORKDIR $HOME/app/backend
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
