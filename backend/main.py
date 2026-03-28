@@ -57,7 +57,11 @@ def init_db():
             c = conn.cursor()
             # Таблиця сесій (чатів)
             c.execute('''CREATE TABLE IF NOT EXISTS sessions
-                         (id TEXT PRIMARY KEY, title TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+                         (id TEXT PRIMARY KEY, title TEXT, patient_profile TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+            try:
+                c.execute("ALTER TABLE sessions ADD COLUMN patient_profile TEXT")
+            except sqlite3.OperationalError:
+                pass
             # Таблиця повідомлень
             c.execute('''CREATE TABLE IF NOT EXISTS messages
                          (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT, role TEXT, content TEXT, logs TEXT)''')
@@ -78,7 +82,7 @@ from datetime import datetime
 class ChatRequest(BaseModel):
     session_id: str
     message: str
-    response_format: str = "text" # "text" or "table"
+    interaction_mode: str = "recommendation" # "recommendation" or "diagnosis"
 
 
 # --- API Endpoints ---
@@ -147,12 +151,23 @@ async def chat(req: ChatRequest):
                 role = "user" if row["role"] == "user" else "model"
                 history_json.append({"role": role, "content": row['content']})
 
-            # Pass response format and history to the agent system
+            # Pass interaction_mode and history to the agent system
             ai_result = agent_system.run_medical_council(
                 req.message, 
-                response_format=req.response_format,
+                interaction_mode=req.interaction_mode,
                 history=history_json
             )
+
+            # Update patient profile
+            try:
+                import json
+                full_hist = history_json + [{"role": "user", "content": req.message}, {"role": "model", "content": ai_result.get('final_report', '')}]
+                profile_json = agent_system.extract_patient_profile(full_hist)
+                if profile_json:
+                    c.execute("UPDATE sessions SET patient_profile = ? WHERE id = ?", (json.dumps(profile_json, ensure_ascii=False), req.session_id))
+                    conn.commit()
+            except Exception as e:
+                logger.error(f"Failed to update patient profile: {e}")
             final_answer = ai_result.get('final_report', "No response generated.")
             logs_list = ai_result.get('logs', [])
             logs_str = "|||".join(logs_list) if logs_list else ""
@@ -221,6 +236,20 @@ async def delete_chat(session_id: str):
         c.execute("DELETE FROM messages WHERE session_id = ?", (session_id,))
         conn.commit()
     return {"status": "success", "message": "Chat deleted"}
+
+@app.get("/api/chats/{session_id}/profile")
+async def get_patient_profile(session_id: str):
+    import json
+    with get_db_connection() as conn:
+        c = conn.cursor()
+        c.execute("SELECT patient_profile FROM sessions WHERE id = ?", (session_id,))
+        row = c.fetchone()
+        if not row or not row["patient_profile"]:
+            return {}
+        try:
+            return json.loads(row["patient_profile"])
+        except json.JSONDecodeError:
+            return {}
 
 # --- Static Files / Production Serving ---
 # Mount the React frontend if the dist directory exists

@@ -48,12 +48,12 @@ class AgentSystem:
         except Exception as e:
             return f"Error generating content: {e}"
 
-    def run_medical_council(self, patient_symptoms, response_format="text", history=""):
+    def run_medical_council(self, patient_symptoms, interaction_mode="recommendation", history=""):
         logs = []
 
         # --- КРОК 1: Сімейний лікар (Triage) ---
         doc_response = self._call_llm(SYSTEM_PROMPTS['family_doctor'], patient_symptoms, history=history)
-        logs.append(f"👨‍⚕️ Family Doctor: {doc_response}")
+        logs.append(f"Family Doctor: {doc_response}")
 
         # --- КРОК 2: Маршрутизація ---
         specialist_response = ""
@@ -62,21 +62,21 @@ class AgentSystem:
             # Направляємо до Фтизіатра
             spec_prompt = SYSTEM_PROMPTS['phthisiatrician']
             specialist_response = self._call_llm(spec_prompt, patient_symptoms, context=doc_response, history=history)
-            logs.append(f"🩻 Phthisiatrician: {specialist_response}")
+            logs.append(f"Phthisiatrician: {specialist_response}")
         else:
             # Направляємо до Інфекціоніста
             spec_prompt = SYSTEM_PROMPTS['infectious_specialist']
             specialist_response = self._call_llm(spec_prompt, patient_symptoms, context=doc_response, history=history)
-            logs.append(f"🦠 Infectious Specialist: {specialist_response}")
+            logs.append(f"Infectious Specialist: {specialist_response}")
 
         # --- КРОК 3: Координатор (Фінальна відповідь) ---
         coord_context = f"Family Doc: {doc_response}\nSpecialist Report: {specialist_response}"
         
-        # Вибір промпта на основі формату
-        if response_format == "table":
-            coord_prompt = SYSTEM_PROMPTS['coordinator'] # Це табличний промпт
+        # Вибір промпта на основі режиму (Діагноз чи Рекомендація)
+        if interaction_mode == "diagnosis":
+            coord_prompt = SYSTEM_PROMPTS['coordinator_diagnosis']
         else:
-            coord_prompt = SYSTEM_PROMPTS.get('coordinator_text', SYSTEM_PROMPTS['coordinator']) # Текстовий або дефолтний
+            coord_prompt = SYSTEM_PROMPTS['coordinator_recommendation']
 
         final_report = self._call_llm(coord_prompt, patient_symptoms, context=coord_context, history=history)
 
@@ -84,6 +84,24 @@ class AgentSystem:
             "final_report": final_report,
             "logs": logs
         }
+
+    def extract_patient_profile(self, history):
+        """Extracts unified patient profile from chat history as JSON."""
+        # Provide history in a readable format
+        formatted_history = "--- CHAT HISTORY ---\n"
+        for msg in history:
+            role = "PATIENT" if msg["role"] == "user" else "SYSTEM"
+            formatted_history += f"[{role}]: {msg['content']}\n\n"
+            
+        prompt = f"{SYSTEM_PROMPTS['profile_extractor']}\n\nHistory:\n{formatted_history}"
+        
+        try:
+            import json
+            response = self.model.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
+            return json.loads(response.text)
+        except Exception as e:
+            # Fallback if something goes wrong
+            return None
 
     def generate_title(self, user_message):
         """Generates a short, concise title for the chat based on the first message."""

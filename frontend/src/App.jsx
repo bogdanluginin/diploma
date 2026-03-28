@@ -11,7 +11,9 @@ function App() {
   const [sessionId, setSessionId] = useState(null)
   const [chats, setChats] = useState([])
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [responseFormat, setResponseFormat] = useState('text') // 'text' or 'table'
+  const [interactionMode, setInteractionMode] = useState('recommendation')
+  const [patientProfile, setPatientProfile] = useState(null)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [copiedId, setCopiedId] = useState(null)
   const [error, setError] = useState(null)
@@ -88,8 +90,21 @@ function App() {
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
       const data = await res.json()
       setMessages(data)
+      fetchPatientProfile(id)
     } catch (e) {
       handleApiError(e, "load chat")
+    }
+  }
+
+  const fetchPatientProfile = async (id) => {
+    try {
+      const res = await fetch(`/api/chats/${id}/profile`)
+      if (res.ok) {
+        const data = await res.json()
+        setPatientProfile(Object.keys(data).length > 0 ? data : null)
+      }
+    } catch (e) {
+      console.error("Failed to fetch profile", e)
     }
   }
 
@@ -177,7 +192,7 @@ function App() {
         body: JSON.stringify({
           session_id: sessionId,
           message: userMsg.content,
-          response_format: responseFormat
+          interaction_mode: interactionMode
         })
       })
 
@@ -186,6 +201,7 @@ function App() {
       const data = await res.json()
       setMessages(prev => [...prev, { role: 'assistant', content: data.response, logs: data.logs }])
       fetchChats() // Update titles
+      fetchPatientProfile(sessionId)
     } catch (e) {
       console.error("Failed to send message", e)
       setError("Не вдалося надіслати повідомлення. Перевірте з'єднання.")
@@ -351,29 +367,41 @@ function App() {
           <div className="flex items-center gap-3">
             <div className="bg-black/5 dark:bg-slate-900/50 p-0.5 rounded-lg flex dark:border dark:border-slate-700/50">
               <button
-                onClick={() => setResponseFormat('text')}
+                onClick={() => setInteractionMode('recommendation')}
                 className={clsx(
                   "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
-                  responseFormat === 'text' ? "bg-white dark:bg-teal-600 text-black dark:text-white shadow-sm" : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-300"
+                  interactionMode === 'recommendation' ? "bg-white dark:bg-teal-600 text-black dark:text-white shadow-sm" : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-300"
                 )}
               >
-                <FileText size={12} /> Текст
+                <FileText size={12} /> Консультація
               </button>
               <button
-                onClick={() => setResponseFormat('table')}
+                onClick={() => setInteractionMode('diagnosis')}
                 className={clsx(
                   "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
-                  responseFormat === 'table' ? "bg-white dark:bg-teal-600 text-black dark:text-white shadow-sm" : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-300"
+                  interactionMode === 'diagnosis' ? "bg-white dark:bg-teal-600 text-black dark:text-white shadow-sm" : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-300"
                 )}
               >
-                <LayoutGrid size={12} /> Таблиця
+                <LayoutGrid size={12} /> Діагноз
               </button>
             </div>
+            <button
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className={clsx(
+                "ml-2 p-1.5 rounded-md transition-colors",
+                isProfileOpen ? "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400" : "text-gray-600 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-slate-800"
+              )}
+              title="Історія пацієнта"
+            >
+              <User size={18} />
+            </button>
           </div>
         </header>
 
-        {/* Chat Area */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-hide">
+        <div className="flex-1 flex overflow-hidden relative">
+          <div className="flex-1 flex flex-col h-full relative">
+            {/* Chat Area */}
+            <main className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-hide">
           {!sessionId ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-8 animate-fade-in-up">
               <div className="w-20 h-20 bg-white dark:bg-[#1e293b] rounded-[1.5rem] flex items-center justify-center mb-6 shadow-xl shadow-black/5 dark:shadow-black/20 dark:border dark:border-slate-700/50">
@@ -517,6 +545,32 @@ function App() {
             </form>
           </div>
         )}
+        </div>
+
+        {/* Right Sidebar for Profile */}
+        {isProfileOpen && sessionId && (
+          <div className="w-80 flex-shrink-0 border-l border-black/10 dark:border-slate-800/50 bg-white/70 dark:bg-[#0f172a]/80 backdrop-blur-xl p-6 overflow-y-auto transition-transform duration-300">
+            <h3 className="font-semibold text-sm mb-6 text-slate-800 dark:text-slate-200 flex items-center gap-2">
+              <FileText size={16} className="text-teal-600 dark:text-teal-400" /> Картка Пацієнта
+            </h3>
+            {patientProfile ? (
+              <div className="space-y-5 text-[13px] text-slate-700 dark:text-slate-300">
+                <div><div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Інформація</div> {patientProfile.patient_info || 'Немає даних'}</div>
+                <div><div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Головні Симптоми</div> {patientProfile.main_symptoms?.length > 0 ? patientProfile.main_symptoms.join(', ') : 'Немає даних'}</div>
+                <div><div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Тривалість</div> {patientProfile.duration || 'Немає даних'}</div>
+                <div><div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Анамнез</div> {patientProfile.medical_history || 'Немає даних'}</div>
+                <div><div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Фактори Ризику</div> {patientProfile.risk_factors?.length > 0 ? patientProfile.risk_factors.join(', ') : 'Немає даних'}</div>
+                <div><div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Примітки</div> {patientProfile.allergies_or_notes || 'Немає даних'}</div>
+              </div>
+            ) : (
+              <div className="text-[13px] text-gray-500 dark:text-slate-500 p-4 border border-dashed border-gray-300 dark:border-slate-700 rounded-xl text-center">
+                Дані ще не зібрані. Опишіть симптоми пацієнта для створення профілю.
+              </div>
+            )}
+          </div>
+        )}
+        </div>
+
       </div>
     </div>
   )
