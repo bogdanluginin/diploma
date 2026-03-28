@@ -1,4 +1,8 @@
 import os
+import sqlean as sqlite3
+import sys
+sys.modules['sqlite3'] = sqlite3
+
 import chromadb
 import PyPDF2
 
