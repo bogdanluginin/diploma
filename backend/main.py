@@ -4,7 +4,7 @@ import uuid
 import os
 import logging
 from contextlib import contextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -250,6 +250,45 @@ async def get_patient_profile(session_id: str):
             return json.loads(row["patient_profile"])
         except json.JSONDecodeError:
             return {}
+
+@app.post("/api/upload")
+async def upload_document(file: UploadFile = File(...)):
+    if not agent_system or not hasattr(agent_system, 'rag') or not agent_system.rag:
+        raise HTTPException(status_code=503, detail="RAG system is not initialized.")
+        
+    try:
+        import shutil
+        import os
+        import PyPDF2
+        
+        # Save temp file
+        temp_path = f"/tmp/{file.filename}"
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Parse PDF
+        text = ""
+        with open(temp_path, 'rb') as f:
+            reader = PyPDF2.PdfReader(f)
+            for page in reader.pages:
+                extracted = page.extract_text()
+                if extracted:
+                    text += extracted + "\n"
+                    
+        # Add to RAG
+        added = agent_system.rag.add_document(text, file.filename)
+        
+        # Cleanup temp
+        os.remove(temp_path)
+        
+        if added:
+            return {"status": "success", "message": f"Документ {file.filename} додано до бази знань."}
+        else:
+            return {"status": "info", "message": f"Документ {file.filename} вже існує у базі знань."}
+            
+    except Exception as e:
+        logger.error(f"Error uploading document: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- Static Files / Production Serving ---
 # Mount the React frontend if the dist directory exists

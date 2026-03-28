@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react'
-import { Send, User, Bot, Activity, Thermometer, AlertTriangle, Menu, X, Trash2, Copy, Check, Stethoscope, FileText, ChevronRight, LayoutGrid, Settings, Search, Pill, HeartPulse, Edit2, Sun, Moon } from 'lucide-react'
+import { Send, User, Bot, Activity, Thermometer, AlertTriangle, Menu, X, Trash2, Copy, Check, Stethoscope, FileText, ChevronRight, LayoutGrid, Settings, Search, Pill, HeartPulse, Edit2, Sun, Moon, Paperclip } from 'lucide-react'
 import clsx from 'clsx'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -21,7 +21,9 @@ function App() {
   const [editingChatId, setEditingChatId] = useState(null)
   const [editTitle, setEditTitle] = useState('')
   const [theme, setTheme] = useState('dark')
+  const [isUploading, setIsUploading] = useState(false)
   const messagesEndRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -173,6 +175,39 @@ function App() {
       setCopiedId(id)
       setTimeout(() => setCopiedId(null), 2000)
     })
+  }
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    if (file.type !== 'application/pdf' && file.type !== 'text/plain') {
+      setError('Можна завантажувати лише PDF або TXT файли')
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    setIsUploading(true)
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+      if (!res.ok) throw new Error(`HTTP error: ${res.status}`)
+      const data = await res.json()
+      
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `**Система:** ${data.message} Цей контекст тепер доступний для ШІ.` 
+      }])
+      
+    } catch (err) {
+      handleApiError(err, 'upload document')
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
   const sendMessage = async (e) => {
@@ -523,13 +558,29 @@ function App() {
           <div className="p-6 bg-transparent sticky bottom-0 z-30">
             <form onSubmit={sendMessage} className="max-w-4xl mx-auto relative group">
               <div className="relative flex items-center bg-white/80 dark:bg-[#1e293b]/90 backdrop-blur-xl border border-black/10 dark:border-slate-700/50 rounded-full shadow-lg shadow-black/5 dark:shadow-black/50 transition-all focus-within:ring-2 focus-within:ring-teal-500/50">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading || isLoading}
+                  className="absolute left-2 p-2.5 text-gray-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors disabled:opacity-50"
+                  title="Завантажити аналізи або протокол (PDF/TXT)"
+                >
+                  <Paperclip size={18} />
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept=".pdf,.txt"
+                  className="hidden"
+                />
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Введіть клінічні дані..."
-                  className="w-full bg-transparent text-gray-900 dark:text-slate-200 py-3 pl-6 pr-14 focus:outline-none placeholder:text-gray-500 dark:placeholder:text-slate-400 text-[15px]"
-                  disabled={isLoading}
+                  placeholder={isUploading ? "Завантаження документу..." : "Введіть клінічні дані..."}
+                  className="w-full bg-transparent text-gray-900 dark:text-slate-200 py-3 pl-12 pr-14 focus:outline-none placeholder:text-gray-500 dark:placeholder:text-slate-400 text-[15px]"
+                  disabled={isLoading || isUploading}
                 />
                 <button
                   type="submit"

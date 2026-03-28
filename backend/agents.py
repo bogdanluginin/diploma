@@ -3,6 +3,7 @@ import os
 import google.generativeai as genai
 from dotenv import load_dotenv
 from prompts import SYSTEM_PROMPTS
+from rag import MedicalRAG
 
 # Завантаження ключа
 load_dotenv()
@@ -13,6 +14,11 @@ class AgentSystem:
     def __init__(self):
         # Використовуємо нову модель, доступну вам
         self.model = genai.GenerativeModel('gemini-3-flash-preview')
+        try:
+            self.rag = MedicalRAG()
+        except Exception as e:
+            print(f"Failed to initialize RAG: {e}")
+            self.rag = None
 
     def _call_llm(self, role_prompt, user_input, context="", history=None):
         """Допоміжна функція запиту до LLM"""
@@ -55,22 +61,35 @@ class AgentSystem:
         doc_response = self._call_llm(SYSTEM_PROMPTS['family_doctor'], patient_symptoms, history=history)
         logs.append(f"Family Doctor: {doc_response}")
 
+        # --- КРОК 1.5: RAG Retrieval ---
+        rag_context = ""
+        if self.rag:
+            query = f"{patient_symptoms} {doc_response}"
+            rag_context = self.rag.retrieve_context(query)
+            if rag_context:
+                logs.append(f"RAG System: Знайдено відповідні медичні протоколи бази знань для підтвердження.")
+
         # --- КРОК 2: Маршрутизація ---
         specialist_response = ""
+        context_for_specialist = f"Family Doc: {doc_response}"
+        if rag_context:
+            context_for_specialist += f"\n\n--- ВИТЯГ З МЕДИЧНИХ ПРОТОКОЛІВ ---\n{rag_context}"
 
         if "REFER: PHTHISIATRICIAN" in doc_response:
             # Направляємо до Фтизіатра
             spec_prompt = SYSTEM_PROMPTS['phthisiatrician']
-            specialist_response = self._call_llm(spec_prompt, patient_symptoms, context=doc_response, history=history)
+            specialist_response = self._call_llm(spec_prompt, patient_symptoms, context=context_for_specialist, history=history)
             logs.append(f"Phthisiatrician: {specialist_response}")
         else:
             # Направляємо до Інфекціоніста
             spec_prompt = SYSTEM_PROMPTS['infectious_specialist']
-            specialist_response = self._call_llm(spec_prompt, patient_symptoms, context=doc_response, history=history)
+            specialist_response = self._call_llm(spec_prompt, patient_symptoms, context=context_for_specialist, history=history)
             logs.append(f"Infectious Specialist: {specialist_response}")
 
         # --- КРОК 3: Координатор (Фінальна відповідь) ---
         coord_context = f"Family Doc: {doc_response}\nSpecialist Report: {specialist_response}"
+        if rag_context:
+            coord_context += f"\n\n--- ВИТЯГ З МЕДИЧНИХ ПРОТОКОЛІВ ---\n{rag_context}"
         
         # Вибір промпта на основі режиму (Діагноз чи Рекомендація)
         if interaction_mode == "diagnosis":
