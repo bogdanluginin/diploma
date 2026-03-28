@@ -1,249 +1,94 @@
+# 🏥 MedCouncil AI: Мультиагентна Медична Система з RAG
+
+![Ліцензія](https://img.shields.io/badge/License-MIT-blue.svg)
+![Python 3.9](https://img.shields.io/badge/Python-3.9+-yellow.svg)
+![React](https://img.shields.io/badge/React-18-cyan.svg)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)
+
+> **Дипломний проєкт:** "Розробка мультиагентної системи штучного інтелекту для попередньої медичної діагностики та маршрутизації пацієнтів з використанням RAG та LLM."
+
+## 📌 Проєкт
+**MedCouncil AI** — це інноваційна медична веб-платформа, що симулює роботу медичного консиліуму. Замість єдиної мовної моделі (LLM), яка дає узагальнені відповіді, у системі працює мережа вузькоспеціалізованих агентів штучного інтелекту, що передають інформацію один одному для прийняття консенсусного рішення.
+
+Для запобігання ШІ-галюцинаціям розроблено модуль **RAG (Retrieval-Augmented Generation)**, який примусово базує всі висновки на завантажених офіційних медичних протоколах (ВООЗ, МОЗ).
+
 ---
-title: Tb
-emoji: 🦀
-colorFrom: yellow
-colorTo: gray
-sdk: docker
-pinned: false
-license: apache-2.0
+
+## 🚀 Ключові Можливості (Функціонал)
+
+- 🤖 **Мультиагентна Маршрутизація (Triage):**
+  - **Сімейний Лікар:** Первинно аналізує скарги пацієнта та виявляє "червоні прапорці" (Red Flags).
+  - **Вузькі Спеціалісти (Фтизіатр / Інфекціоніст):** Оцінюють специфічні фактори (наприклад, ризики MDR-ТБ, коінфекції ВІЛ).
+  - **Головний Координатор:** Зводить думки лікарів у два можливі формати відповідей: *Діагноз* (суворий висновок для лікарів) або *Консультація* (обережні рекомендації для пацієнтів).
+- 📚 **База Знань (RAG) та Робота з PDF:**
+  - Локальна векторна БД (**ChromaDB**) зберігає масштабні медичні рекомендації.
+  - Динамічне завантаження **PDF-файлів** (результатів аналізів або нових протоколів документації) "на льоту" прямо через вебінтерфейс (іконка 📎).
+- 📋 **Динамічна Картка Пацієнта:**
+  - Фоновий ШІ-аналітик незалежно читає контекст чату та автоматично витягує систематизований анамнез, скарги і фактори ризику у праву бічну панель.
+- 🎨 **Сучасний Інтерфейс (Glassmorphism):**
+  - Підтримка Світлої/Темної теми. Плавні анімації, збереження історії діалогів місцевою базою та професійний клінічний дизайн.
+
 ---
 
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
-=======
-# MedCouncil AI - Clinical Decision Support System
+## 🛠 Технологічний Стек
 
-A sophisticated AI-powered medical consultation platform featuring multi-agent collaboration, context-aware conversations, and a beautiful light/dark theme interface.
+### Backend (Серверна частина)
+* **Python 3.9+** (FastAPI) — Блискавичне API та оркестрація агентів.
+* **Google Gemini API** (модель `gemini-3-flash-preview`) — Ядро мислення агентів.
+* **ChromaDB** — Векторна локальна пам'ять системи (для протоколів).
+* **PyPDF2** — Читання та розпізнавання медичних документів.
+* **SQLite** (sqlean.py) — Реляційна база історії повідомлень.
 
-## Features
+### Frontend (Клієнтська частина)
+* **React 18** (Vite) — Швидкий SPA-інтерфейс.
+* **TailwindCSS** — Стилізація (ефект матового скла та адаптивність).
+* **Lucide-React** — Мінімалістична медична іконографіка.
+* **React Markdown** — Красивий рендеринг відповідей від ШІ.
 
-✨ **Multi-Agent Medical Council**
-- Family Doctor (Triage)
-- Phthisiatrician (TB Specialist)
-- Infectious Disease Specialist
-- AI Coordinator for final diagnosis
+---
 
-🎨 **Modern UI/UX**
-- Light/Dark theme toggle
-- Apple-inspired design with glassmorphism
-- Medical color palette (Clinical Teal & Slate)
-- Smooth animations and transitions
+## ⚙️ Як Запустити Проєкт
 
-💬 **Smart Chat Features**
-- Context-aware conversations (AI remembers chat history)
-- AI-powered smart chat titling
-- Inline chat renaming
-- Search functionality
-- Response format toggle (Text/Table)
-
-🔒 **Data Persistence**
-- SQLite database for chat history
-- Session management
-- Message logging
-
-## Tech Stack
-
-### Backend
-- **FastAPI** - Modern Python web framework
-- **Google Gemini 2.5 Flash** - AI model
-- **SQLite** - Database
-- **Uvicorn** - ASGI server
-
-### Frontend
-- **React** - UI framework
-- **Vite** - Build tool
-- **Tailwind CSS** - Styling
-- **Lucide React** - Icons
-- **React Markdown** - Markdown rendering
-
-## Prerequisites
-
-- **Python 3.9+**
-- **Node.js 18+** and npm
-- **Google Gemini API Key** ([Get one here](https://makersuite.google.com/app/apikey))
-
-## Installation
-
-### 1. Clone the Repository
-
+### 1. Клонування
 ```bash
-git clone https://github.com/bogdanluginin/ppfinal.git
-cd ppfinal
+git clone https://github.com/bogdanluginin/diploma_bogdanluginin_tb.git
+cd diploma_bogdanluginin_tb
 ```
 
-### 2. Backend Setup
-
-```bash
-# Navigate to backend directory
-cd backend
-
-# Create virtual environment (optional but recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install fastapi uvicorn google-generativeai python-dotenv
-
-# Create .env file with your API key
-echo "GEMINI_API_KEY=your_api_key_here" > .env
-```
-
-### 3. Frontend Setup
-
-```bash
-# Navigate to frontend directory
-cd ../frontend
-
-# Install dependencies
-npm install
-```
-
-## Running the Application
-
-### Start Backend Server
-
+### 2. Запуск Backend'у
+Відкрийте термінал і виконайте:
 ```bash
 cd backend
+python3 -m venv venv
+source venv/bin/activate  # Для Windows: venv\Scripts\activate
+pip install -r requirements.txt
+pip install chromadb PyPDF2 python-multipart sqlean.py  # Розширені модулі RAG
 uvicorn main:app --reload --port 8000
 ```
+> **Увага:** Не забудьте створити файл `.env` у папці `/backend` і додати туди ключ доступу: `GEMINI_API_KEY=Ваш_ключ`.
 
-The backend will be available at `http://localhost:8000`
-
-### Start Frontend Development Server
-
+### 3. Запуск Frontend'у
+Відкрийте **нову** вкладку терміналу і виконайте:
 ```bash
 cd frontend
+npm install
 npm run dev
 ```
-
-The frontend will be available at `http://localhost:5173`
-
-## Usage
-
-1. **Create a New Consultation**
-   - Click "New Consultation" button in the sidebar
-   - A new chat session will be created
-
-2. **Enter Patient Data**
-   - Type symptoms, medical history, or patient information
-   - Choose response format (Text or Table)
-   - Press Enter or click Send
-
-3. **View AI Analysis**
-   - See clinical reasoning from multiple specialists
-   - Get final diagnosis and treatment recommendations
-   - View in your preferred format
-
-4. **Manage Chats**
-   - Search chats by name, condition, or ID
-   - Rename chats by clicking the pencil icon
-   - Delete chats with the trash icon
-   - Toggle between light/dark theme
-
-## Project Structure
-
-```
-ppfinal/
-├── backend/
-│   ├── main.py           # FastAPI application & API endpoints
-│   ├── agents.py         # Multi-agent AI system
-│   ├── prompts.py        # System prompts for AI agents
-│   ├── hospital.db       # SQLite database (auto-created)
-│   └── .env             # Environment variables (create this)
-│
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx      # Main React component
-│   │   ├── main.jsx     # Entry point
-│   │   └── index.css    # Global styles
-│   ├── tailwind.config.js
-│   ├── vite.config.js
-│   └── package.json
-│
-└── README.md
-```
-
-## API Endpoints
-
-### Chat Management
-- `POST /api/chats/new` - Create new chat session
-- `GET /api/chats` - Get all chat sessions
-- `GET /api/chats/{session_id}/messages` - Get messages for a session
-- `DELETE /api/chats/{session_id}` - Delete a chat session
-- `PUT /api/chats/{session_id}/title` - Update chat title
-
-### Messaging
-- `POST /api/chat` - Send message and get AI response
-  ```json
-  {
-    "session_id": "uuid",
-    "message": "Patient symptoms...",
-    "response_format": "text" // or "table"
-  }
-  ```
-
-## Environment Variables
-
-Create a `.env` file in the `backend` directory:
-
-```env
-GEMINI_API_KEY=your_google_gemini_api_key_here
-```
-
-## Troubleshooting
-
-### Backend Issues
-
-**Database errors:**
-```bash
-# Delete and recreate database
-rm backend/hospital.db
-# Restart backend server
-```
-
-**Import errors:**
-```bash
-# Reinstall dependencies
-pip install --upgrade -r backend/requirements.txt
-```
-
-### Frontend Issues
-
-**Build errors:**
-```bash
-# Clear cache and reinstall
-rm -rf node_modules package-lock.json
-npm install
-```
-
-**Port already in use:**
-```bash
-# Change port in vite.config.js or kill process
-lsof -ti:5173 | xargs kill -9
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is for educational purposes.
-
-## Acknowledgments
-
-- Google Gemini AI for powering the medical agents
-- Tailwind CSS for the beautiful UI framework
-- Lucide for the icon set
-
-## Contact
-
-For questions or support, please open an issue on GitHub.
+🌐 Система автоматично запуститься за адресою: `http://localhost:5173`
 
 ---
 
-**⚠️ Disclaimer:** This is an AI-powered educational tool and should NOT be used for actual medical diagnosis or treatment. Always consult qualified healthcare professionals for medical advice.
+## 📊 Блок-схема Роботи
 
+1. Користувач вводить скарги або завантажує PDF аналізи (через React Frontend).
+2. Дані надходять на `FastAPI`. 
+3. PDF парситься у вектори і додається у пам'ять `ChromaDB`.
+4. Векторна база віддає релевантні уривки з Міністерських протоколів.
+5. `Сімейний лікар` робить первинний аналіз і маршрутизує на `Фтизіатра` або `Інфекціоніста` разом із медичними протоколами.
+6. Вузькі спеціалісти формують думки.
+7. `Координатор` дає фінальний синтезований текст пацієнту.
+
+<br/>
+<p align="center">
+  <b>Розроблено як MVP мультиагентної системи. Київ, 2026.</b>
+</p>
